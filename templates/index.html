@@ -173,9 +173,45 @@
       </div>
 
       <div class="modal-body">
+        <!-- Local AI Rewrite Assistant Panel -->
+        <div class="ai-editor-panel" id="ai-editor-panel">
+          <div class="ai-panel-header">
+            <div class="ai-panel-title">
+              <span class="ai-sparkle-icon">✨</span>
+              <strong>Local AI Polish (Ollama)</strong>
+              <span class="ai-status-badge offline" id="ai-status-badge">Checking...</span>
+            </div>
+            <div class="ai-model-select-wrap" id="ai-model-wrap" style="display: none;">
+              <select id="ai-model-select" class="ai-model-select"></select>
+            </div>
+          </div>
+
+          <div class="ai-presets-row">
+            <button class="btn-ai-style active" data-style="viral">🚀 Viral Hook</button>
+            <button class="btn-ai-style" data-style="professional">💼 Executive</button>
+            <button class="btn-ai-style" data-style="tldr">💡 TL;DR</button>
+            <button class="btn-ai-style" data-style="eli5">👶 Plain English</button>
+            <button class="btn-ai-style" data-style="custom">✍️ Custom Prompt</button>
+          </div>
+
+          <div class="ai-custom-prompt-wrap" id="ai-custom-prompt-wrap" style="display: none;">
+            <input type="text" id="ai-custom-prompt-input" placeholder="e.g., Highlight SQL performance, make it funny, translate...">
+          </div>
+
+          <div class="ai-action-row">
+            <button id="ai-generate-btn" class="btn btn-ai-generate">
+              <span class="ai-btn-icon">✨</span>
+              <span class="ai-btn-text">Rewrite with Local AI</span>
+            </button>
+            <button id="ai-revert-btn" class="btn btn-ghost btn-sm" title="Revert to original text" style="display: none;">
+              ↩️ Undo AI Edit
+            </button>
+          </div>
+        </div>
+
         <div class="tweet-editor-group">
-          <label for="tweet-textarea" class="editor-label">Customize your tweet before posting:</label>
-          <textarea id="tweet-textarea" rows="7" placeholder="What's happening in BigQuery?"></textarea>
+          <label for="tweet-textarea" class="editor-label">Customize your text or tweet:</label>
+          <textarea id="tweet-textarea" rows="6" placeholder="What's happening in BigQuery?"></textarea>
         </div>
 
         <div class="tweet-meta-row">

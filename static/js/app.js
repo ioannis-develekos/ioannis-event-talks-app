@@ -41,7 +41,21 @@ class ReleaseNotesApp {
       exportCsvBtn: document.getElementById("export-csv-btn"),
       exportSelectedCsvBtn: document.getElementById("export-selected-csv-btn"),
       toastContainer: document.getElementById("toast-container"),
+      // AI Assistant DOM elements
+      aiStatusBadge: document.getElementById("ai-status-badge"),
+      aiModelWrap: document.getElementById("ai-model-wrap"),
+      aiModelSelect: document.getElementById("ai-model-select"),
+      aiCustomPromptWrap: document.getElementById("ai-custom-prompt-wrap"),
+      aiCustomPromptInput: document.getElementById("ai-custom-prompt-input"),
+      aiGenerateBtn: document.getElementById("ai-generate-btn"),
+      aiRevertBtn: document.getElementById("ai-revert-btn"),
     };
+
+    // AI Assistant State
+    this.aiSelectedStyle = "viral";
+    this.aiOriginalText = "";
+    this.aiConnected = false;
+    this.aiModel = "gemma2:2b";
 
     this.init();
   }
@@ -131,6 +145,37 @@ class ReleaseNotesApp {
     });
 
     this.dom.tweetTextarea.addEventListener("input", () => this.updateTweetModalState());
+
+    // AI Assistant Style Preset Buttons
+    document.querySelectorAll(".btn-ai-style").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".btn-ai-style").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.aiSelectedStyle = btn.getAttribute("data-style");
+        
+        if (this.aiSelectedStyle === "custom") {
+          this.dom.aiCustomPromptWrap.style.display = "block";
+          this.dom.aiCustomPromptInput.focus();
+        } else {
+          this.dom.aiCustomPromptWrap.style.display = "none";
+        }
+      });
+    });
+
+    // AI Generate & Revert Buttons
+    if (this.dom.aiGenerateBtn) {
+      this.dom.aiGenerateBtn.addEventListener("click", () => this.generateWithLocalAi());
+    }
+    if (this.dom.aiRevertBtn) {
+      this.dom.aiRevertBtn.addEventListener("click", () => this.revertAiEdit());
+    }
+    if (this.dom.aiStatusBadge) {
+      this.dom.aiStatusBadge.addEventListener("click", () => {
+        if (!this.aiConnected) {
+          this.showToast("To use local AI: run 'ollama serve' and 'ollama pull gemma2:2b' in your terminal.", "info");
+        }
+      });
+    }
 
     // Hashtag Chips in Tweet Modal
     document.querySelectorAll(".tag-chip").forEach((chip) => {
@@ -519,13 +564,106 @@ class ReleaseNotesApp {
   }
 
   /* ========================================================================
-     Tweet Modal & Twitter Intent
+     Tweet Modal & Local AI Assistant
      ======================================================================== */
   openTweetModal(initialText) {
+    this.aiOriginalText = initialText || "";
     this.dom.tweetTextarea.value = initialText || "";
     this.dom.tweetModal.style.display = "flex";
+    if (this.dom.aiRevertBtn) this.dom.aiRevertBtn.style.display = "none";
     this.updateTweetModalState();
+    this.checkAiStatus();
     this.dom.tweetTextarea.focus();
+  }
+
+  async checkAiStatus() {
+    try {
+      const res = await fetch("/api/ai/status");
+      const data = await res.json();
+      this.aiConnected = data.connected;
+
+      if (data.connected) {
+        this.dom.aiStatusBadge.className = "ai-status-badge online";
+        this.dom.aiStatusBadge.textContent = `🟢 Online: ${data.default_model}`;
+
+        if (data.models && data.models.length > 0) {
+          this.dom.aiModelSelect.innerHTML = data.models
+            .map((m) => `<option value="${m}" ${m === data.default_model ? "selected" : ""}>${m}</option>`)
+            .join("");
+          this.dom.aiModelWrap.style.display = "block";
+        }
+      } else {
+        this.dom.aiStatusBadge.className = "ai-status-badge offline";
+        this.dom.aiStatusBadge.textContent = "⚠️ Ollama Offline";
+        this.dom.aiModelWrap.style.display = "none";
+      }
+    } catch (e) {
+      this.aiConnected = false;
+      this.dom.aiStatusBadge.className = "ai-status-badge offline";
+      this.dom.aiStatusBadge.textContent = "⚠️ Ollama Offline";
+      this.dom.aiModelWrap.style.display = "none";
+    }
+  }
+
+  async generateWithLocalAi() {
+    const currentText = this.dom.tweetTextarea.value.trim();
+    if (!currentText) {
+      this.showToast("Please enter some text or select an update first.", "error");
+      return;
+    }
+
+    const selectedModel = this.dom.aiModelSelect && this.dom.aiModelSelect.value
+      ? this.dom.aiModelSelect.value
+      : this.aiModel;
+
+    const customPrompt = this.dom.aiCustomPromptInput
+      ? this.dom.aiCustomPromptInput.value.trim()
+      : "";
+
+    this.dom.aiGenerateBtn.classList.add("loading");
+    this.dom.aiGenerateBtn.disabled = true;
+    const originalBtnText = this.dom.aiGenerateBtn.querySelector(".ai-btn-text").textContent;
+    this.dom.aiGenerateBtn.querySelector(".ai-btn-text").textContent = "Rewriting with Ollama...";
+
+    try {
+      const res = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: currentText,
+          style: this.aiSelectedStyle,
+          custom_prompt: customPrompt,
+          model: selectedModel,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || data.status !== "success") {
+        throw new Error(data.message || "Failed to generate AI rewrite.");
+      }
+
+      this.dom.tweetTextarea.value = data.text;
+      this.updateTweetModalState();
+      if (this.dom.aiRevertBtn) this.dom.aiRevertBtn.style.display = "inline-flex";
+      this.showToast(`Rewritten with local ${data.model}! ✨`, "success");
+    } catch (err) {
+      console.error("AI Generation Error:", err);
+      this.showToast(err.message, "error");
+    } finally {
+      this.dom.aiGenerateBtn.classList.remove("loading");
+      this.dom.aiGenerateBtn.disabled = false;
+      this.dom.aiGenerateBtn.querySelector(".ai-btn-text").textContent = originalBtnText;
+    }
+  }
+
+  revertAiEdit() {
+    if (this.aiOriginalText) {
+      this.dom.tweetTextarea.value = this.aiOriginalText;
+      this.updateTweetModalState();
+      if (this.dom.aiRevertBtn) this.dom.aiRevertBtn.style.display = "none";
+      this.showToast("Reverted to original text", "info");
+    }
   }
 
   closeTweetModal() {

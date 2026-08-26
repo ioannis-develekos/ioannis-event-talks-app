@@ -1,5 +1,6 @@
 import datetime
 import html
+import os
 import re
 import urllib.parse
 from typing import Any, Dict, List
@@ -198,6 +199,127 @@ def api_release_notes():
         }), 500
 
 
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+DEFAULT_LOCAL_MODEL = os.environ.get("LOCAL_MODEL", "gemma2:2b")
+
+
+@app.route("/api/ai/status")
+def api_ai_status():
+    """Checks if local Ollama daemon is reachable and lists available models."""
+    try:
+        res = requests.get(f"{OLLAMA_HOST}/api/tags", timeout=2)
+        if res.ok:
+            data = res.json()
+            models = [m.get("name") for m in data.get("models", [])]
+            return jsonify({
+                "status": "success",
+                "connected": True,
+                "host": OLLAMA_HOST,
+                "default_model": DEFAULT_LOCAL_MODEL if DEFAULT_LOCAL_MODEL in models or not models else models[0],
+                "models": models,
+            })
+    except Exception:
+        pass
+
+    return jsonify({
+        "status": "offline",
+        "connected": False,
+        "host": OLLAMA_HOST,
+        "default_model": DEFAULT_LOCAL_MODEL,
+        "models": [],
+        "instructions": "Run 'ollama serve' and 'ollama pull gemma2:2b' on your machine to activate local AI.",
+    })
+
+
+@app.route("/api/ai/generate", methods=["POST"])
+def api_ai_generate():
+    """Generates an AI-polished rewrite using a local Ollama model (e.g. Gemma, Llama)."""
+    payload = request.get_json() or {}
+    text = payload.get("text", "").strip()
+    style = payload.get("style", "viral")
+    custom_prompt = payload.get("custom_prompt", "").strip()
+    model = payload.get("model") or DEFAULT_LOCAL_MODEL
+    link = payload.get("link", "").strip()
+
+    if not text:
+        return jsonify({"status": "error", "message": "Text content is required."}), 400
+
+    style_instructions = {
+        "viral": "Make it engaging, punchy, with a compelling hook, 2-3 emojis, and key developer benefit.",
+        "professional": "Make it concise, executive, and professional, highlighting technical and business impact.",
+        "tldr": "Summarize into 1-2 ultra-clear bullet points highlighting the core update.",
+        "eli5": "Explain in simple, plain English without heavy database jargon.",
+        "custom": custom_prompt or "Rewrite and polish this release note cleanly.",
+    }.get(style, "Make it engaging, punchy, and informative.")
+
+    prompt = f"""You are an expert Google Cloud and BigQuery developer advocate.
+Rewrite the following BigQuery release note update for a social post.
+
+Style instruction: {style_instructions}
+
+Source update:
+\"\"\"
+{text}
+\"\"\"
+
+STRICT RULES:
+1. Keep the output under 240 characters (excluding link).
+2. Include relevant hashtags: #BigQuery #GoogleCloud #DataEngineering
+3. If a link is provided ({link}), include it at the end.
+4. Output ONLY the final post text. Do NOT include preambles, explanations, or quotes.
+"""
+
+    try:
+        res = requests.post(
+            f"{OLLAMA_HOST}/api/generate",
+            json={
+                "model": model,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.7,
+                    "num_predict": 150,
+                },
+            },
+            timeout=25,
+        )
+
+        if not res.ok:
+            return jsonify({
+                "status": "error",
+                "message": f"Ollama returned error status {res.status_code}: {res.text}",
+            }), 502
+
+        data = res.json()
+        generated_text = data.get("response", "").strip()
+        # Clean up any wrapping quotes
+        if generated_text.startswith('"') and generated_text.endswith('"'):
+            generated_text = generated_text[1:-1].strip()
+
+        return jsonify({
+            "status": "success",
+            "text": generated_text,
+            "model": model,
+            "style": style,
+        })
+
+    except requests.exceptions.ConnectionError:
+        return jsonify({
+            "status": "error",
+            "message": f"Cannot connect to Ollama at {OLLAMA_HOST}. Make sure Ollama is running (`ollama serve`).",
+        }), 503
+    except requests.exceptions.Timeout:
+        return jsonify({
+            "status": "error",
+            "message": "Ollama request timed out. Model might be busy or loading.",
+        }), 504
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e),
+        }), 500
+
+
 @app.route("/health")
 def health():
     """Health check endpoint."""
@@ -206,3 +328,4 @@ def health():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
+
