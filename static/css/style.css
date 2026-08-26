@@ -776,6 +776,13 @@ body.theme-dark .filter-count {
   height: 13px;
 }
 
+.action-btn-sm.copied {
+  background: var(--cat-feature-bg);
+  color: var(--cat-feature-text);
+  border-color: var(--cat-feature-border);
+  font-weight: 600;
+}
+
 /* Update Content HTML Rendering */
 .update-content {
   color: var(--text-secondary);

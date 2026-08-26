@@ -38,6 +38,8 @@ class ReleaseNotesApp {
       postTweetBtn: document.getElementById("post-tweet-btn"),
       copyTweetBtn: document.getElementById("copy-tweet-btn"),
       themeToggleBtn: document.getElementById("theme-toggle-btn"),
+      exportCsvBtn: document.getElementById("export-csv-btn"),
+      exportSelectedCsvBtn: document.getElementById("export-selected-csv-btn"),
       toastContainer: document.getElementById("toast-container"),
     };
 
@@ -78,6 +80,11 @@ class ReleaseNotesApp {
     // Refresh button
     this.dom.refreshBtn.addEventListener("click", () => this.refreshFeed(true));
 
+    // Export CSV button
+    if (this.dom.exportCsvBtn) {
+      this.dom.exportCsvBtn.addEventListener("click", () => this.exportToCSV(false));
+    }
+
     // Theme toggle
     this.dom.themeToggleBtn.addEventListener("click", () => this.toggleTheme());
 
@@ -113,6 +120,9 @@ class ReleaseNotesApp {
     // Floating Selection Bar Actions
     this.dom.clearSelectionBtn.addEventListener("click", () => this.clearSelection());
     this.dom.tweetSelectedBtn.addEventListener("click", () => this.openTweetModalForSelected());
+    if (this.dom.exportSelectedCsvBtn) {
+      this.dom.exportSelectedCsvBtn.addEventListener("click", () => this.exportToCSV(true));
+    }
 
     // Tweet Modal Actions
     this.dom.closeModalBtn.addEventListener("click", () => this.closeTweetModal());
@@ -405,12 +415,28 @@ class ReleaseNotesApp {
 
     // Copy buttons
     this.dom.entriesList.querySelectorAll(".action-copy-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const itemId = btn.getAttribute("data-item-id");
         const found = this.findItemById(itemId);
         if (found) {
-          navigator.clipboard.writeText(`${found.entry.date} [${found.item.category}]:\n${found.item.text}\n\n${found.entry.link}`);
-          this.showToast("Copied update to clipboard!", "success");
+          const formattedText = `📅 ${found.entry.date} [${found.item.category}]\n${found.item.text}\n\n🔗 Documentation: ${found.entry.link}`;
+          await this.copyToClipboard(formattedText);
+          
+          const originalHTML = btn.innerHTML;
+          btn.classList.add("copied");
+          btn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Copied!
+          `;
+
+          setTimeout(() => {
+            btn.classList.remove("copied");
+            btn.innerHTML = originalHTML;
+          }, 2000);
+
+          this.showToast("Update copied to clipboard!", "success");
         }
       });
     });
@@ -551,8 +577,95 @@ class ReleaseNotesApp {
   copyTweetText() {
     const text = this.dom.tweetTextarea.value.trim();
     if (!text) return;
-    navigator.clipboard.writeText(text);
+    this.copyToClipboard(text);
     this.showToast("Tweet text copied to clipboard!", "success");
+  }
+
+  /* ========================================================================
+     Export to CSV
+     ======================================================================== */
+  exportToCSV(onlySelected = false) {
+    let itemsToExport = [];
+
+    if (onlySelected && this.selectedItemIds.size > 0) {
+      for (const itemId of this.selectedItemIds) {
+        const found = this.findItemById(itemId);
+        if (found) itemsToExport.push(found);
+      }
+    } else {
+      const filtered = this.getFilteredEntries();
+      for (const entry of filtered) {
+        for (const item of entry.items) {
+          itemsToExport.push({ entry, item });
+        }
+      }
+    }
+
+    if (!itemsToExport.length) {
+      this.showToast("No updates available to export", "error");
+      return;
+    }
+
+    const escapeCsv = (val) => {
+      const str = (val || "").toString().replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const headers = ["Date", "Category", "Summary", "Documentation Link", "Tweet Text"];
+    const csvRows = [headers.map(escapeCsv).join(",")];
+
+    for (const { entry, item } of itemsToExport) {
+      csvRows.push([
+        escapeCsv(entry.date),
+        escapeCsv(item.category),
+        escapeCsv(item.text),
+        escapeCsv(entry.link),
+        escapeCsv(item.tweet_text)
+      ].join(","));
+    }
+
+    const csvContent = "\uFEFF" + csvRows.join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    const filename = `bigquery-release-notes-${onlySelected ? "selected-" : ""}${dateStamp}.csv`;
+
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    this.showToast(`Exported ${itemsToExport.length} updates to CSV!`, "success");
+  }
+
+  async copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return;
+      } catch (e) {
+        console.warn("Clipboard API failed, attempting fallback", e);
+      }
+    }
+    
+    // Fallback for older browsers or non-HTTPS contexts
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand("copy");
+    } catch (err) {
+      console.error("Fallback copy failed:", err);
+    }
+    textArea.remove();
   }
 
   /* ========================================================================

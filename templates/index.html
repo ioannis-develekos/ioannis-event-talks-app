@@ -37,6 +37,15 @@
           <span class="stat-pill" id="stat-updates"><strong id="total-updates-count">0</strong> Updates</span>
         </div>
 
+        <button id="export-csv-btn" class="btn btn-secondary" title="Export release notes to CSV file">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span class="btn-label">Export CSV</span>
+        </button>
+
         <button id="refresh-btn" class="btn btn-primary" title="Fetch latest release notes">
           <svg class="refresh-spinner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
@@ -131,11 +140,19 @@
         <span>updates selected</span>
       </div>
       <div class="selection-actions">
+        <button id="export-selected-csv-btn" class="btn btn-secondary" title="Export selected updates to CSV">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export CSV
+        </button>
         <button id="tweet-selected-btn" class="btn btn-tweet">
           <svg class="x-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
           </svg>
-          Compose Tweet from Selected
+          Compose Tweet
         </button>
         <button id="clear-selection-btn" class="btn btn-ghost">Clear</button>
       </div>
