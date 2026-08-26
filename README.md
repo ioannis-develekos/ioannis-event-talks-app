@@ -1,11 +1,12 @@
-# BigQuery Release Notes & Social Tracker ⚡
+# BigQuery Release Notes & Social Broadcaster ⚡
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![Flask 3.1](https://img.shields.io/badge/Flask-3.1-black.svg?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![Local AI: Gemma 4](https://img.shields.io/badge/Local%20AI-Gemma%204%20(26B)-orange.svg)](https://ollama.com/library/gemma4:26b)
 [![Managed with uv](https://img.shields.io/badge/managed%20with-uv-blueviolet.svg?logo=astral&logoColor=white)](https://github.com/astral-sh/uv)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A modern, responsive web application built with **Python Flask** and **plain vanilla HTML5, CSS3, and JavaScript**. It connects directly to the [official Google Cloud BigQuery Atom Feed](https://docs.cloud.google.com/feeds/bigquery-release-notes.xml), parses release notes into categorized update items (`Feature`, `Change`, `Deprecated`, `Announcement`, `Security`, `Issue`), and provides an interactive interface with live refreshing and 1-click **Tweet / X publishing**.
+A modern, responsive web application built with **Python Flask** and **plain vanilla HTML5, CSS3, and JavaScript**. It connects directly to the [official Google Cloud BigQuery Atom Feed](https://docs.cloud.google.com/feeds/bigquery-release-notes.xml), parses release notes into categorized update items (`Feature`, `Change`, `Deprecated`, `Announcement`, `Security`, `Issue`), and provides an interactive interface with live token-streaming AI text polishing (**Ollama / Gemma 4**) and 1-click **Multi-Platform Social Publishing** (Twitter/X, Facebook, LinkedIn, BlueSky).
 
 ---
 
@@ -18,40 +19,47 @@ A modern, responsive web application built with **Python Flask** and **plain van
 - [Getting Started](#-getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation & Environment Setup](#installation--environment-setup)
-  - [Running the Application](#running-the-application)
+  - [Running with Local Gemma 4](#running-with-local-gemma-4)
+- [Keyboard Shortcuts](#-keyboard-shortcuts)
 - [API Reference](#-api-reference)
-- [Social Sharing Flow](#-social-sharing-flow)
 - [License](#-license)
 
 ---
 
 ## 🌟 Key Features
 
-1. **Live XML/Atom Feed Ingestion**:
+1. **Live Feed Ingestion & Granular Parsing**:
    - Fetches and parses `https://docs.cloud.google.com/feeds/bigquery-release-notes.xml` in real time.
-   - Granularly breaks down release dates into distinct, individually actionable update cards.
+   - Breaks down release dates into distinct, individually actionable update cards.
    - Sanitizes HTML links, resolving relative cloud URLs and enforcing safe external tabs (`rel="noopener noreferrer"`).
 
-2. **Interactive Refresh with Spinner**:
-   - Dedicated **Refresh Feed** button with an animated CSS spinner.
-   - Cache management: In-memory TTL caching (5 minutes) with forced cache-busting when the refresh button is clicked.
+2. **Local AI Text & Tweet Assistant (Ollama / Gemma 4)**:
+   - **Zero Token Cost**: Communicates locally with `http://localhost:11434` without third-party APIs.
+   - **Real-Time Token Streaming**: Streams generated output directly into the editor.
+   - **Preset Tones**: 🚀 Viral Hook, 💼 Executive, 💡 TL;DR, 👶 Plain English, ✍️ Custom Prompt.
+   - **1-Click Undo**: Instantly revert AI rewrites back to original unedited text.
 
-3. **Tweet / Share on X Integration**:
-   - **1-Click Tweet Composer**: Opens a pre-formatted tweet modal with category emojis, summary snippet, link, and relevant hashtags.
-   - **Live 280-Character Counter**: Real-time counter with visual threshold alerts (green `< 250`, amber `250–280`, red `> 280`).
-   - **Quick Hashtag Toggles**: Add/remove `#BigQuery`, `#GoogleCloud`, `#DataEngineering`, `#SQL`, and `#GenAI` with a single click.
-   - **Multi-Select Batch Digest**: Check multiple updates to generate a consolidated thread/digest.
-   - **Twitter Web Intent**: Direct browser-level publishing to X (`https://twitter.com/intent/tweet`) without needing Twitter API keys or OAuth setups.
+3. **Multi-Platform Social Broadcaster**:
+   - **Twitter / X**: 280-char counter with visual warnings and hashtag chips.
+   - **Facebook**: 1-click Web Sharer intent dialog.
+   - **LinkedIn**: 1-click professional share intent dialog.
+   - **BlueSky**: 1-click compose intent dialog.
+   - **Batch Digest**: Check multiple updates to compose a composite multi-topic post.
 
-4. **Instant Search & Category Filtering**:
-   - Client-side keyword search across dates, categories, and content (shortcut: `/` to focus).
-   - Category pill filters (`Features`, `Changes`, `Deprecated`, `Announcements`, `Security`, `Issues`) with dynamic item counters.
+4. **Search, Timeframe Filtering & Highlighting**:
+   - Instant search with dynamic **yellow keyword highlighting** (`<mark class="highlight">`).
+   - Timeframe pills: **All Time**, **Past 7 Days**, **Past 30 Days**, **Past 90 Days**, and **⭐ Starred**.
+   - Category pill filters (`Features`, `Changes`, `Deprecated`, `Announcements`, `Security`, `Issues`).
+   - Summary status bar showing active filter count with 1-click reset.
 
-5. **Clean Vanilla UI (Light & Dark Theme)**:
-   - Built purely with Vanilla HTML, CSS, and ES6 JavaScript — zero heavy frontend frameworks (no React, no Vue, no jQuery).
-   - Theme toggle with automatic local storage persistence.
-
----
+5. **Ergonomics, Accessibility & Shortcuts**:
+   - **⭐ Bookmarking**: Save favorite updates in `localStorage`.
+   - **📂 Collapsible Accordions**: Expand or collapse all date sections with one click.
+   - **Full Keyboard Navigation**: `J`/`K` navigation, `X` selection, `S` star, `T` tweet, `Ctrl+Enter` publish.
+   - **Skeleton Shimmer**: Animated placeholder cards during feed fetch.
+   - **Offline Detection**: Real-time banner alert when internet connectivity drops.
+   - **Floating Back to Top**: Smooth scroll-to-top button.
+   - **Theme Engine**: Light and dark themes with persistent preference.
 
 ## 🏗️ Architecture & Data Flow
 

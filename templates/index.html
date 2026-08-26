@@ -5,9 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BigQuery Release Notes & Social Tracker</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto+Mono:wght@400;500&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="theme-dark">
+<body class="theme-light">
+  <!-- Offline Connectivity Banner -->
+  <div id="offline-banner" class="offline-banner" style="display: none;">
+    <span class="offline-dot"></span>
+    <span>You are currently offline. Displaying cached BigQuery release notes.</span>
+  </div>
+
   <!-- Toast Container -->
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
@@ -27,7 +36,7 @@
             <h1>BigQuery Release Notes</h1>
             <span class="badge live-badge"><span class="pulse-dot"></span> Live Feed</span>
           </div>
-          <p class="brand-subtitle">Real-time tracker for Google Cloud BigQuery updates with 1-click Tweet sharing</p>
+          <p class="brand-subtitle">Real-time tracker for Google Cloud BigQuery updates with AI-powered multi-platform social broadcaster</p>
         </div>
       </div>
 
@@ -48,12 +57,25 @@
 
         <button id="refresh-btn" class="btn btn-primary" title="Fetch latest release notes">
           <svg class="refresh-spinner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
           </svg>
-          <span class="btn-label">Refresh Feed</span>
+          <span class="btn-label">Refresh</span>
         </button>
 
-        <button id="theme-toggle-btn" class="btn btn-icon" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+        <!-- Expand / Collapse All Dates -->
+        <button id="toggle-collapse-all-btn" class="btn btn-secondary btn-icon" title="Expand or collapse all date sections">
+          <span id="collapse-icon">📂</span>
+        </button>
+
+        <!-- Keyboard Shortcuts Button -->
+        <button id="shortcuts-help-btn" class="btn btn-secondary btn-icon" title="Keyboard Shortcuts (?)">
+          ⌨️
+        </button>
+
+        <!-- Dark / Light Theme Toggle -->
+        <button id="theme-toggle-btn" class="btn btn-icon" aria-label="Toggle dark mode" title="Toggle theme">
           <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="5"></circle>
             <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -82,8 +104,19 @@
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <input type="text" id="search-input" placeholder="Search release notes by keywords, features, SQL syntax, or dates..." autocomplete="off">
+        <input type="text" id="search-input" placeholder="Search updates by keywords (e.g. Terraform, Iceberg, partitioning, SQL)... [/]" autocomplete="off">
         <button id="clear-search-btn" class="clear-search-btn" title="Clear search" style="display: none;">&times;</button>
+      </div>
+
+      <!-- Timeframe Filter Tabs -->
+      <div class="timeframe-row">
+        <div class="timeframe-filters" id="timeframe-filters">
+          <button class="timeframe-pill active" data-timeframe="all">All Time</button>
+          <button class="timeframe-pill" data-timeframe="7d">Past 7 Days</button>
+          <button class="timeframe-pill" data-timeframe="30d">Past 30 Days</button>
+          <button class="timeframe-pill" data-timeframe="90d">Past 90 Days</button>
+          <button class="timeframe-pill star-pill" data-timeframe="starred">⭐ Starred (<span id="count-starred">0</span>)</button>
+        </div>
       </div>
 
       <div class="filters-row">
@@ -101,14 +134,36 @@
           <span id="last-updated-text" class="last-updated-text">Checking feed...</span>
         </div>
       </div>
+
+      <!-- Search Results Summary Bar -->
+      <div id="search-summary-bar" class="search-summary-bar" style="display: none;">
+        <span id="search-summary-text"></span>
+        <button id="reset-search-summary-btn" class="btn-link">Clear search & filters</button>
+      </div>
     </section>
 
     <!-- Release Notes Timeline & Feed List -->
     <section class="feed-section" id="feed-section">
       <!-- Loading Skeleton (Shown initially / during refresh) -->
       <div id="loading-state" class="loading-state">
-        <div class="spinner-large"></div>
-        <p>Fetching BigQuery release notes from Google Cloud feed...</p>
+        <div class="skeleton-container">
+          <div class="skeleton-group-header"></div>
+          <div class="skeleton-card">
+            <div class="skeleton-line title"></div>
+            <div class="skeleton-line body"></div>
+            <div class="skeleton-line short"></div>
+          </div>
+          <div class="skeleton-card">
+            <div class="skeleton-line title"></div>
+            <div class="skeleton-line body"></div>
+            <div class="skeleton-line short"></div>
+          </div>
+          <div class="skeleton-card">
+            <div class="skeleton-line title"></div>
+            <div class="skeleton-line body"></div>
+            <div class="skeleton-line short"></div>
+          </div>
+        </div>
       </div>
 
       <!-- Error State -->
@@ -123,8 +178,8 @@
       <div id="empty-state" class="empty-card" style="display: none;">
         <div class="empty-icon">🔍</div>
         <h3>No matching release notes found</h3>
-        <p>Try refining your search keyword or clearing the category filter.</p>
-        <button class="btn btn-secondary" onclick="app.resetFilters()">Reset Filters</button>
+        <p>Try refining your search keyword or clearing the active filters.</p>
+        <button class="btn btn-secondary" onclick="app.resetFilters()">Reset All Filters</button>
       </div>
 
       <!-- Entries Container -->
@@ -152,24 +207,50 @@
           <svg class="x-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
           </svg>
-          Compose Tweet
+          Compose Social Post
         </button>
         <button id="clear-selection-btn" class="btn btn-ghost">Clear</button>
       </div>
     </div>
   </aside>
 
-  <!-- Tweet Composer Modal -->
+  <!-- Social & AI Composer Modal -->
   <div id="tweet-modal" class="modal-overlay" style="display: none;" aria-modal="true" role="dialog">
     <div class="modal-card">
       <div class="modal-header">
         <div class="modal-title-wrap">
-          <svg class="x-icon-modal" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-          </svg>
-          <h3>Share on X (Twitter)</h3>
+          <span class="modal-icon-badge">✨</span>
+          <h3 id="modal-title">Social Broadcaster & AI Editor</h3>
         </div>
         <button class="modal-close-btn" id="close-modal-btn" aria-label="Close dialog">&times;</button>
+      </div>
+
+      <!-- Platform Selector Tabs -->
+      <div class="platform-tabs" id="platform-tabs">
+        <button class="platform-tab active" data-platform="twitter">
+          <svg class="x-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          X (Twitter)
+        </button>
+        <button class="platform-tab" data-platform="facebook">
+          <svg class="fb-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+          Facebook
+        </button>
+        <button class="platform-tab" data-platform="linkedin">
+          <svg class="linkedin-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.64 1.64 0 0 0 1.63-1.64c0-.9-.73-1.63-1.63-1.63a1.64 1.64 0 0 0-1.64 1.63c0 .9.74 1.64 1.64 1.64m1.39 9.74v-8.37H5.07v8.37h2.78z"/>
+          </svg>
+          LinkedIn
+        </button>
+        <button class="platform-tab" data-platform="bluesky">
+          <svg class="bluesky-icon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566 1.01 1.05 1.576 0.358 2.766c-.66 1.134-.34 3.864.218 5.617.82 2.58 3.528 4.257 5.754 4.542-3.34-.362-6.33 1.127-6.33 4.675 0 3.548 3.09 5.4 6.772 5.4 3.682 0 4.888-2.6 5.228-4.2.34 1.6 1.546 4.2 5.228 4.2 3.682 0 6.772-1.852 6.772-5.4 0-3.548-2.99-5.037-6.33-4.675 2.226-.285 4.934-1.962 5.754-4.542.558-1.753.878-4.483.218-5.617-.692-1.19-2.208-1.756-4.844.039C16.046 4.747 13.087 8.686 12 10.8z"/>
+          </svg>
+          BlueSky
+        </button>
       </div>
 
       <div class="modal-body">
@@ -179,7 +260,7 @@
             <div class="ai-panel-title">
               <span class="ai-sparkle-icon">✨</span>
               <strong>Local AI Polish (Ollama)</strong>
-              <span class="ai-status-badge offline" id="ai-status-badge">Checking...</span>
+              <button class="ai-status-badge offline" id="ai-status-badge" title="Click for Ollama setup guide">Checking...</button>
             </div>
             <div class="ai-model-select-wrap" id="ai-model-wrap" style="display: none;">
               <select id="ai-model-select" class="ai-model-select"></select>
@@ -210,8 +291,8 @@
         </div>
 
         <div class="tweet-editor-group">
-          <label for="tweet-textarea" class="editor-label">Customize your text or tweet:</label>
-          <textarea id="tweet-textarea" rows="6" placeholder="What's happening in BigQuery?"></textarea>
+          <label for="tweet-textarea" class="editor-label">Customize your message:</label>
+          <textarea id="tweet-textarea" rows="6" placeholder="Write your update..."></textarea>
         </div>
 
         <div class="tweet-meta-row">
@@ -226,16 +307,16 @@
           </div>
 
           <div class="char-counter" id="char-counter-container">
-            <span id="char-count">0</span> / 280
+            <span id="char-count">0</span> / <span id="char-max-limit">280</span>
           </div>
         </div>
 
         <div class="tweet-preview-card">
           <div class="preview-header">
-            <div class="preview-avatar">⚡</div>
+            <div class="preview-avatar" id="preview-avatar">⚡</div>
             <div class="preview-user-info">
-              <span class="preview-name">BigQuery News Tracker</span>
-              <span class="preview-handle">@BigQueryNotes</span>
+              <span class="preview-name" id="preview-name">BigQuery News Tracker</span>
+              <span class="preview-handle" id="preview-handle">@BigQueryNotes</span>
             </div>
           </div>
           <div class="preview-body" id="tweet-preview-text"></div>
@@ -243,30 +324,133 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-secondary" id="copy-tweet-btn">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-          Copy Text
-        </button>
-
         <button class="btn btn-fb-post" id="post-fb-btn" title="Share on Facebook">
           <svg class="fb-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
           </svg>
-          Share on Facebook
+          Share to FB
         </button>
 
-        <button class="btn btn-tweet-post" id="post-tweet-btn">
+        <button class="btn btn-linkedin-post" id="post-linkedin-btn" title="Share on LinkedIn">
+          <svg class="linkedin-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.64 1.64 0 0 0 1.63-1.64c0-.9-.73-1.63-1.63-1.63a1.64 1.64 0 0 0-1.64 1.63c0 .9.74 1.64 1.64 1.64m1.39 9.74v-8.37H5.07v8.37h2.78z"/>
+          </svg>
+          Share to LinkedIn
+        </button>
+
+        <button class="btn btn-bluesky-post" id="post-bluesky-btn" title="Share on BlueSky">
+          <svg class="bluesky-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566 1.01 1.05 1.576 0.358 2.766c-.66 1.134-.34 3.864.218 5.617.82 2.58 3.528 4.257 5.754 4.542-3.34-.362-6.33 1.127-6.33 4.675 0 3.548 3.09 5.4 6.772 5.4 3.682 0 4.888-2.6 5.228-4.2.34 1.6 1.546 4.2 5.228 4.2 3.682 0 6.772-1.852 6.772-5.4 0-3.548-2.99-5.037-6.33-4.675 2.226-.285 4.934-1.962 5.754-4.542.558-1.753.878-4.483.218-5.617-.692-1.19-2.208-1.756-4.844.039C16.046 4.747 13.087 8.686 12 10.8z"/>
+          </svg>
+          Post to BlueSky
+        </button>
+
+        <button class="btn btn-tweet-post" id="post-tweet-btn" title="Post to X (Twitter)">
           <svg class="x-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
           </svg>
-          Post to X (Twitter)
+          Post to X
         </button>
       </div>
     </div>
   </div>
+
+  <!-- Ollama Setup & Help Modal -->
+  <div id="ollama-help-modal" class="modal-overlay" style="display: none;" aria-modal="true" role="dialog">
+    <div class="modal-card modal-help-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-icon-badge">🦙</span>
+          <h3>Local AI Setup Guide (Ollama)</h3>
+        </div>
+        <button class="modal-close-btn" id="close-ollama-help-btn" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>This app runs 100% locally using <strong>Ollama</strong> and Google's <strong>Gemma 4</strong> model with zero subscription or token cost.</p>
+
+        <div class="setup-steps-list">
+          <div class="setup-step-item">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <strong>Install Ollama (Linux / Mac)</strong>
+              <div class="code-snippet-box">
+                <code>curl -fsSL https://ollama.com/install.sh | sh</code>
+                <button class="btn-copy-code" data-copy="curl -fsSL https://ollama.com/install.sh | sh">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="setup-step-item">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <strong>Pull Gemma 4 (26B)</strong>
+              <div class="code-snippet-box">
+                <code>ollama pull gemma4:26b</code>
+                <button class="btn-copy-code" data-copy="ollama pull gemma4:26b">Copy</button>
+              </div>
+              <span class="step-hint">Or for a lightweight model: <code>ollama pull gemma2:2b</code></span>
+            </div>
+          </div>
+
+          <div class="setup-step-item">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <strong>Start the Ollama Server</strong>
+              <div class="code-snippet-box">
+                <code>ollama serve</code>
+                <button class="btn-copy-code" data-copy="ollama serve">Copy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="check-ollama-btn">Check Connection Now</button>
+        <button class="btn btn-secondary" id="close-ollama-help-bottom-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyboard Shortcuts Modal -->
+  <div id="shortcuts-modal" class="modal-overlay" style="display: none;" aria-modal="true" role="dialog">
+    <div class="modal-card modal-help-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-icon-badge">⌨️</span>
+          <h3>Keyboard Shortcuts</h3>
+        </div>
+        <button class="modal-close-btn" id="close-shortcuts-modal-btn" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="modal-body">
+        <table class="shortcuts-table">
+          <thead>
+            <tr><th>Shortcut</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><kbd>/</kbd></td><td>Focus search bar</td></tr>
+            <tr><td><kbd>J</kbd> / <kbd>K</kbd></td><td>Navigate down / up through update cards</td></tr>
+            <tr><td><kbd>X</kbd></td><td>Toggle checkbox selection on focused card</td></tr>
+            <tr><td><kbd>S</kbd></td><td>Star / Bookmark focused card</td></tr>
+            <tr><td><kbd>T</kbd></td><td>Open social post composer modal</td></tr>
+            <tr><td><kbd>R</kbd></td><td>Refresh release notes feed</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>Enter</kbd></td><td>Publish social post (inside modal)</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>Close any open modal or clear search</td></tr>
+            <tr><td><kbd>?</kbd></td><td>Show this keyboard shortcuts guide</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="close-shortcuts-modal-bottom-btn">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Back to Top Button -->
+  <button id="back-to-top-btn" class="back-to-top-btn" title="Back to top" aria-label="Scroll back to top">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="18 15 12 9 6 15"></polyline>
+    </svg>
+  </button>
 
   <!-- Footer -->
   <footer class="app-footer">

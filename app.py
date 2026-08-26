@@ -1,5 +1,6 @@
 import datetime
 import html
+import json
 import os
 import re
 import urllib.parse
@@ -7,7 +8,7 @@ from typing import Any, Dict, List
 
 from bs4 import BeautifulSoup
 import feedparser
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, Response, stream_with_context
 import requests
 
 app = Flask(__name__)
@@ -183,6 +184,7 @@ def index():
 
 
 @app.route("/api/release-notes")
+@app.route("/api/feed")
 def api_release_notes():
     """API endpoint for fetching release notes JSON."""
     force_refresh = request.args.get("refresh", "").lower() in ["1", "true", "yes"]
@@ -191,6 +193,9 @@ def api_release_notes():
         return jsonify({
             "status": "success",
             "data": data,
+            "entries": data.get("entries", []),
+            "total_updates": data.get("total_updates", 0),
+            "fetched_at": data.get("fetched_at"),
         })
     except Exception as e:
         return jsonify({
@@ -267,6 +272,47 @@ def api_ai_generate():
         f"BigQuery update to rewrite:\n{text}\n\n"
         f"Link: {link}\n"
     )
+
+    stream_mode = bool(payload.get("stream")) or request.args.get("stream") in ["1", "true"]
+
+    if stream_mode:
+        def generate_sse():
+            try:
+                res = requests.post(
+                    f"{OLLAMA_HOST}/api/chat",
+                    json={
+                        "model": model,
+                        "messages": [
+                            {"role": "system", "content": system_instruction},
+                            {"role": "user", "content": user_instruction},
+                        ],
+                        "stream": True,
+                        "options": {
+                            "temperature": 0.7,
+                        },
+                    },
+                    stream=True,
+                    timeout=120,
+                )
+
+                if not res.ok:
+                    yield f"data: {json.dumps({'error': f'Ollama error {res.status_code}'})}\n\n"
+                    return
+
+                for line in res.iter_lines():
+                    if line:
+                        chunk = json.loads(line.decode("utf-8"))
+                        token = chunk.get("message", {}).get("content", "")
+                        if token:
+                            yield f"data: {json.dumps({'token': token})}\n\n"
+                        if chunk.get("done"):
+                            yield f"data: {json.dumps({'done': True, 'model': model})}\n\n"
+                            break
+
+            except Exception as e:
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+        return Response(stream_with_context(generate_sse()), mimetype="text/event-stream")
 
     try:
         res = requests.post(

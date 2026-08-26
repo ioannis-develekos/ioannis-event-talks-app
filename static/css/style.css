@@ -399,7 +399,6 @@ body.theme-dark .btn-tweet {
   font-weight: 700;
   padding: 0.6rem 1.25rem;
 }
-
 .btn-fb-post:hover {
   background: #166fe5;
 }
@@ -412,15 +411,91 @@ body.theme-dark .btn-tweet {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
 }
-
 .btn-fb-sm:hover {
   background: #1877f2;
   color: #ffffff;
   border-color: #1877f2;
 }
 
+/* LinkedIn Specific Buttons */
+.btn-linkedin-post {
+  background: #0a66c2;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 0.6rem 1.25rem;
+}
+.btn-linkedin-post:hover {
+  background: #084e96;
+}
+
+.btn-linkedin-sm {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.65rem;
+  background: var(--bg-surface-subtle);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+.btn-linkedin-sm:hover {
+  background: #0a66c2;
+  color: #ffffff;
+  border-color: #0a66c2;
+}
+
+/* BlueSky Specific Buttons */
+.btn-bluesky-post {
+  background: #1185fe;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 0.6rem 1.25rem;
+}
+.btn-bluesky-post:hover {
+  background: #0c71db;
+}
+
+.btn-bluesky-sm {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.65rem;
+  background: var(--bg-surface-subtle);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+.btn-bluesky-sm:hover {
+  background: #1185fe;
+  color: #ffffff;
+  border-color: #1185fe;
+}
+
+/* Star / Favorite Button */
+.btn-star-sm {
+  font-size: 0.85rem;
+  padding: 0.35rem 0.6rem;
+  background: var(--bg-surface-subtle);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.btn-star-sm:hover {
+  color: #fbbc04;
+  border-color: #fbbc04;
+  background: rgba(251, 188, 4, 0.1);
+}
+.btn-star-sm.starred {
+  color: #fbbc04;
+  border-color: #fbbc04;
+  background: rgba(251, 188, 4, 0.15);
+  font-weight: bold;
+}
+
 .btn-fb-sm svg,
-.btn-fb-post svg {
+.btn-fb-post svg,
+.btn-linkedin-sm svg,
+.btn-linkedin-post svg,
+.btn-bluesky-sm svg,
+.btn-bluesky-post svg {
   width: 14px;
   height: 14px;
 }
@@ -1440,3 +1515,385 @@ body.theme-dark .filter-count {
     justify-content: space-between;
   }
 }
+
+/* ==========================================================================
+   Offline Banner
+   ========================================================================== */
+.offline-banner {
+  background: #ea4335;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  z-index: 1000;
+}
+
+.offline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  animation: pulse-badge 1.5s infinite;
+}
+
+/* ==========================================================================
+   Timeframe Filters & Star Pill
+   ========================================================================== */
+.timeframe-row {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.timeframe-filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.timeframe-pill {
+  padding: 0.35rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.timeframe-pill:hover {
+  background: var(--bg-surface-subtle);
+  color: var(--text-primary);
+}
+
+.timeframe-pill.active {
+  background: var(--text-primary);
+  color: var(--bg-surface);
+  border-color: var(--text-primary);
+}
+
+.timeframe-pill.star-pill.active {
+  background: #fbbc04;
+  color: #202124;
+  border-color: #fbbc04;
+}
+
+/* ==========================================================================
+   Search Summary Bar & Highlights
+   ========================================================================== */
+.search-summary-bar {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-subtle);
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+mark.highlight {
+  background: #fff3a8;
+  color: #202124;
+  padding: 0 2px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+body.theme-dark mark.highlight {
+  background: #fdd663;
+  color: #202124;
+}
+
+/* ==========================================================================
+   Skeleton Shimmer Loaders
+   ========================================================================== */
+.skeleton-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.skeleton-group-header {
+  height: 28px;
+  width: 220px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-subtle);
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-card {
+  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-subtle);
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-line.title {
+  height: 20px;
+  width: 50%;
+}
+
+.skeleton-line.body {
+  width: 90%;
+}
+
+.skeleton-line.short {
+  width: 40%;
+}
+
+@keyframes shimmer {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+/* ==========================================================================
+   Collapsible Date Groups & Accordions
+   ========================================================================== */
+.date-group-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.date-items.collapsed {
+  display: none !important;
+}
+
+.date-toggle-chevron {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  transition: transform var(--transition-fast);
+}
+
+.date-group-header.collapsed .date-toggle-chevron {
+  transform: rotate(-90deg);
+}
+
+/* ==========================================================================
+   New Badge & Keyboard Focused Outline
+   ========================================================================== */
+.badge-new-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: #34a853;
+  color: #ffffff;
+  margin-left: 0.5rem;
+  letter-spacing: 0.5px;
+}
+
+.update-card.keyboard-focused {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+/* ==========================================================================
+   Platform Tabs in Composer Modal
+   ========================================================================== */
+.platform-tabs {
+  display: flex;
+  background: var(--bg-surface-subtle);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 1rem;
+}
+
+.platform-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.75rem 0.5rem;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.platform-tab:hover {
+  color: var(--text-primary);
+}
+
+.platform-tab.active {
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--primary-color);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Helper Modals (Shortcuts & Ollama Help)
+   ========================================================================== */
+.modal-help-card {
+  max-width: 580px;
+}
+
+.shortcuts-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.shortcuts-table th,
+.shortcuts-table td {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+
+.shortcuts-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+kbd {
+  display: inline-block;
+  padding: 0.2rem 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.setup-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.setup-step-item {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: #ffffff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.code-snippet-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.75rem;
+  margin-top: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.code-snippet-box code {
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.btn-copy-code {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  margin-left: 0.5rem;
+}
+
+.btn-copy-code:hover {
+  background: var(--primary-color);
+  color: #ffffff;
+  border-color: var(--primary-color);
+}
+
+/* ==========================================================================
+   Back to Top Button
+   ========================================================================== */
+.back-to-top-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 900;
+  transition: all var(--transition-fast);
+}
+
+.back-to-top-btn:hover {
+  background: var(--primary-color);
+  color: #ffffff;
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+}
+
