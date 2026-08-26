@@ -639,14 +639,14 @@ class ReleaseNotesApp {
 
       const data = await res.json();
 
-      if (!res.ok || data.status !== "success") {
-        throw new Error(data.message || "Failed to generate AI rewrite.");
+      if (data.text && data.text.trim()) {
+        this.dom.tweetTextarea.value = data.text.trim();
+        this.updateTweetModalState();
+        if (this.dom.aiRevertBtn) this.dom.aiRevertBtn.style.display = "inline-flex";
+        this.showToast(`Rewritten with local ${data.model}! ✨`, "success");
+      } else {
+        throw new Error("Model returned an empty response. Please try another tone or prompt.");
       }
-
-      this.dom.tweetTextarea.value = data.text;
-      this.updateTweetModalState();
-      if (this.dom.aiRevertBtn) this.dom.aiRevertBtn.style.display = "inline-flex";
-      this.showToast(`Rewritten with local ${data.model}! ✨`, "success");
     } catch (err) {
       console.error("AI Generation Error:", err);
       this.showToast(err.message, "error");

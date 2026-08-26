@@ -233,7 +233,7 @@ def api_ai_status():
 
 @app.route("/api/ai/generate", methods=["POST"])
 def api_ai_generate():
-    """Generates an AI-polished rewrite using a local Ollama model (e.g. Gemma, Llama)."""
+    """Generates an AI-polished rewrite using a local Ollama model (e.g. Gemma 4, Llama)."""
     payload = request.get_json() or {}
     text = payload.get("text", "").strip()
     style = payload.get("style", "viral")
@@ -252,49 +252,69 @@ def api_ai_generate():
         "custom": custom_prompt or "Rewrite and polish this release note cleanly.",
     }.get(style, "Make it engaging, punchy, and informative.")
 
-    prompt = f"""You are an expert Google Cloud and BigQuery developer advocate.
-Rewrite the following BigQuery release note update for a social post.
+    system_instruction = (
+        "You are an expert developer advocate writing for Twitter/X about Google Cloud BigQuery. "
+        "Your task is to write ONE single, ready-to-post tweet. "
+        "STRICT RULES:\n"
+        "1. Output ONLY the tweet text. Do NOT provide multiple options, preambles, or explanations.\n"
+        "2. Keep it under 240 characters (excluding link).\n"
+        "3. Include relevant hashtags: #BigQuery #GoogleCloud #DataEngineering.\n"
+        "4. Include the link if provided."
+    )
 
-Style instruction: {style_instructions}
-
-Source update:
-\"\"\"
-{text}
-\"\"\"
-
-STRICT RULES:
-1. Keep the output under 240 characters (excluding link).
-2. Include relevant hashtags: #BigQuery #GoogleCloud #DataEngineering
-3. If a link is provided ({link}), include it at the end.
-4. Output ONLY the final post text. Do NOT include preambles, explanations, or quotes.
-"""
+    user_instruction = (
+        f"Tone style: {style_instructions}\n\n"
+        f"BigQuery update to rewrite:\n{text}\n\n"
+        f"Link: {link}\n"
+    )
 
     try:
         res = requests.post(
-            f"{OLLAMA_HOST}/api/generate",
+            f"{OLLAMA_HOST}/api/chat",
             json={
                 "model": model,
-                "prompt": prompt,
+                "messages": [
+                    {"role": "system", "content": system_instruction},
+                    {"role": "user", "content": user_instruction},
+                ],
                 "stream": False,
                 "options": {
                     "temperature": 0.7,
-                    "num_predict": 150,
                 },
             },
-            timeout=25,
+            timeout=90,
         )
 
         if not res.ok:
             return jsonify({
                 "status": "error",
-                "message": f"Ollama returned error status {res.status_code}: {res.text}",
+                "message": f"Ollama error {res.status_code}: {res.text}",
             }), 502
 
         data = res.json()
-        generated_text = data.get("response", "").strip()
-        # Clean up any wrapping quotes
+        
+        # Extract content from chat message
+        msg_obj = data.get("message", {})
+        generated_text = msg_obj.get("content", "").strip() if isinstance(msg_obj, dict) else ""
+        
+        # Fallback to response field if present
+        if not generated_text:
+            generated_text = data.get("response", "").strip()
+
+        # Clean wrapping markdown codeblocks or quotes
+        if generated_text.startswith("```") and generated_text.endswith("```"):
+            lines = generated_text.splitlines()
+            if len(lines) >= 2:
+                generated_text = "\n".join(lines[1:-1]).strip()
+
         if generated_text.startswith('"') and generated_text.endswith('"'):
             generated_text = generated_text[1:-1].strip()
+
+        if not generated_text:
+            return jsonify({
+                "status": "error",
+                "message": "Model produced an empty response. Please try again or choose another preset.",
+            }), 500
 
         return jsonify({
             "status": "success",
@@ -311,7 +331,7 @@ STRICT RULES:
     except requests.exceptions.Timeout:
         return jsonify({
             "status": "error",
-            "message": "Ollama request timed out. Model might be busy or loading.",
+            "message": "Ollama request timed out. Large local models may take longer to process on CPU/RAM.",
         }), 504
     except Exception as e:
         return jsonify({
