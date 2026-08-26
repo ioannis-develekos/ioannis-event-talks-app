@@ -36,6 +36,7 @@ class ReleaseNotesApp {
       charCounterContainer: document.getElementById("char-counter-container"),
       tweetPreviewText: document.getElementById("tweet-preview-text"),
       postTweetBtn: document.getElementById("post-tweet-btn"),
+      postFbBtn: document.getElementById("post-fb-btn"),
       copyTweetBtn: document.getElementById("copy-tweet-btn"),
       themeToggleBtn: document.getElementById("theme-toggle-btn"),
       exportCsvBtn: document.getElementById("export-csv-btn"),
@@ -186,6 +187,9 @@ class ReleaseNotesApp {
     });
 
     this.dom.postTweetBtn.addEventListener("click", () => this.postTweetToTwitter());
+    if (this.dom.postFbBtn) {
+      this.dom.postFbBtn.addEventListener("click", () => this.postModalToFacebook());
+    }
     this.dom.copyTweetBtn.addEventListener("click", () => this.copyTweetText());
 
     // Keyboard Shortcuts
@@ -433,6 +437,13 @@ class ReleaseNotesApp {
               Copy
             </button>
 
+            <button class="btn btn-fb-sm action-fb-btn" data-item-id="${item.id}" title="Share this update to Facebook">
+              <svg class="fb-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              </svg>
+              FB
+            </button>
+
             <button class="btn btn-tweet-sm action-tweet-btn" data-item-id="${item.id}" title="Tweet about this update">
               <svg class="x-icon" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 24.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
@@ -482,6 +493,17 @@ class ReleaseNotesApp {
           }, 2000);
 
           this.showToast("Update copied to clipboard!", "success");
+        }
+      });
+    });
+
+    // Facebook single buttons
+    this.dom.entriesList.querySelectorAll(".action-fb-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const itemId = btn.getAttribute("data-item-id");
+        const found = this.findItemById(itemId);
+        if (found) {
+          this.postToFacebook(found.item.text, found.entry.link);
         }
       });
     });
@@ -710,6 +732,25 @@ class ReleaseNotesApp {
     window.open(twitterUrl, "_blank", "width=550,height=420,scrollbars=yes,resizable=yes");
     this.closeTweetModal();
     this.showToast("Opening Twitter / X composer...", "info");
+  }
+
+  postToFacebook(text, url) {
+    const shareUrl = url || "https://cloud.google.com/bigquery/docs/release-notes";
+    const quote = (text || "").trim();
+    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(quote)}`;
+    window.open(fbUrl, "_blank", "width=600,height=500,scrollbars=yes,resizable=yes");
+    this.showToast("Opening Facebook share dialog...", "info");
+  }
+
+  postModalToFacebook() {
+    const text = this.dom.tweetTextarea.value.trim();
+    if (!text) {
+      this.showToast("Content cannot be empty", "error");
+      return;
+    }
+    const url = "https://cloud.google.com/bigquery/docs/release-notes";
+    this.postToFacebook(text, url);
+    this.closeTweetModal();
   }
 
   copyTweetText() {

@@ -392,6 +392,39 @@ body.theme-dark .btn-tweet {
   background: #1a8cd8;
 }
 
+/* Facebook Specific Buttons */
+.btn-fb-post {
+  background: #1877f2;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 0.6rem 1.25rem;
+}
+
+.btn-fb-post:hover {
+  background: #166fe5;
+}
+
+.btn-fb-sm {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.65rem;
+  background: var(--bg-surface-subtle);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.btn-fb-sm:hover {
+  background: #1877f2;
+  color: #ffffff;
+  border-color: #1877f2;
+}
+
+.btn-fb-sm svg,
+.btn-fb-post svg {
+  width: 14px;
+  height: 14px;
+}
+
 .btn-tweet-sm {
   font-size: 0.8rem;
   padding: 0.35rem 0.75rem;
