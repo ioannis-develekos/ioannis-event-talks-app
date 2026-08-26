@@ -200,7 +200,7 @@ def api_release_notes():
 
 
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-DEFAULT_LOCAL_MODEL = os.environ.get("LOCAL_MODEL", "gemma2:2b")
+DEFAULT_LOCAL_MODEL = os.environ.get("LOCAL_MODEL", "gemma4:26b")
 
 
 @app.route("/api/ai/status")

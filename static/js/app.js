@@ -55,7 +55,7 @@ class ReleaseNotesApp {
     this.aiSelectedStyle = "viral";
     this.aiOriginalText = "";
     this.aiConnected = false;
-    this.aiModel = "gemma2:2b";
+    this.aiModel = "gemma4:26b";
 
     this.init();
   }
