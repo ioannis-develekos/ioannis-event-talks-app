@@ -18,7 +18,6 @@ class ReleaseNotesApp {
 
     // Track visit timestamp for "NEW" badges
     this.lastVisitTimestamp = parseInt(localStorage.getItem("bq_last_visit_time") || "0", 10);
-    // Update visit timestamp for next session
     localStorage.setItem("bq_last_visit_time", Date.now().toString());
 
     // DOM Element References
@@ -125,7 +124,9 @@ class ReleaseNotesApp {
      ======================================================================== */
   setupTheme() {
     const savedTheme = localStorage.getItem("bq_rn_theme") || "theme-light";
-    document.body.className = savedTheme;
+    if (document.body) {
+      document.body.className = savedTheme;
+    }
   }
 
   toggleTheme() {
@@ -140,21 +141,23 @@ class ReleaseNotesApp {
      Event Listeners
      ======================================================================== */
   setupEventListeners() {
-    this.dom.refreshBtn.addEventListener("click", () => this.refreshFeed(true));
-
+    if (this.dom.refreshBtn) {
+      this.dom.refreshBtn.addEventListener("click", () => this.refreshFeed(true));
+    }
     if (this.dom.exportCsvBtn) {
       this.dom.exportCsvBtn.addEventListener("click", () => this.exportToCSV(false));
     }
     if (this.dom.exportSelectedCsvBtn) {
       this.dom.exportSelectedCsvBtn.addEventListener("click", () => this.exportToCSV(true));
     }
-
-    this.dom.themeToggleBtn.addEventListener("click", () => this.toggleTheme());
-
+    if (this.dom.themeToggleBtn) {
+      this.dom.themeToggleBtn.addEventListener("click", () => this.toggleTheme());
+    }
     if (this.dom.toggleCollapseAllBtn) {
       this.dom.toggleCollapseAllBtn.addEventListener("click", () => this.toggleCollapseAll());
     }
 
+    // Shortcuts Modal
     if (this.dom.shortcutsHelpBtn) {
       this.dom.shortcutsHelpBtn.addEventListener("click", () => this.openShortcutsModal());
     }
@@ -165,6 +168,7 @@ class ReleaseNotesApp {
       this.dom.closeShortcutsModalBottomBtn.addEventListener("click", () => this.closeShortcutsModal());
     }
 
+    // Ollama Help Modal
     if (this.dom.aiStatusBadge) {
       this.dom.aiStatusBadge.addEventListener("click", () => {
         if (!this.aiConnected) {
@@ -190,92 +194,124 @@ class ReleaseNotesApp {
       });
     }
 
+    // Copy command buttons
     document.querySelectorAll(".btn-copy-code").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const code = btn.getAttribute("data-copy");
-        await this.copyToClipboard(code);
-        const originalText = btn.textContent;
-        btn.textContent = "Copied!";
-        setTimeout(() => (btn.textContent = originalText), 2000);
+        if (code) {
+          await this.copyToClipboard(code);
+          const originalText = btn.textContent;
+          btn.textContent = "Copied!";
+          setTimeout(() => (btn.textContent = originalText), 2000);
+        }
       });
     });
 
-    let searchDebounce;
-    this.dom.searchInput.addEventListener("input", (e) => {
-      clearTimeout(searchDebounce);
-      searchDebounce = setTimeout(() => {
-        this.searchQuery = e.target.value.trim().toLowerCase();
-        this.dom.clearSearchBtn.style.display = this.searchQuery ? "block" : "none";
-        this.render();
-      }, 150);
-    });
+    // Search Input
+    if (this.dom.searchInput) {
+      let searchDebounce;
+      this.dom.searchInput.addEventListener("input", (e) => {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => {
+          this.searchQuery = e.target.value.trim().toLowerCase();
+          if (this.dom.clearSearchBtn) {
+            this.dom.clearSearchBtn.style.display = this.searchQuery ? "block" : "none";
+          }
+          this.render();
+        }, 150);
+      });
+    }
 
-    this.dom.clearSearchBtn.addEventListener("click", () => {
-      this.dom.searchInput.value = "";
-      this.searchQuery = "";
-      this.dom.clearSearchBtn.style.display = "none";
-      this.render();
-      this.dom.searchInput.focus();
-    });
+    if (this.dom.clearSearchBtn) {
+      this.dom.clearSearchBtn.addEventListener("click", () => {
+        if (this.dom.searchInput) {
+          this.dom.searchInput.value = "";
+          this.dom.searchInput.focus();
+        }
+        this.searchQuery = "";
+        this.dom.clearSearchBtn.style.display = "none";
+        this.render();
+      });
+    }
 
     if (this.dom.resetSearchSummaryBtn) {
       this.dom.resetSearchSummaryBtn.addEventListener("click", () => this.resetFilters());
     }
 
+    // Timeframe filters
     if (this.dom.timeframeFilters) {
       this.dom.timeframeFilters.querySelectorAll(".timeframe-pill").forEach((btn) => {
         btn.addEventListener("click", () => {
           this.dom.timeframeFilters.querySelectorAll(".timeframe-pill").forEach((b) => b.classList.remove("active"));
           btn.classList.add("active");
-          this.currentTimeframe = btn.getAttribute("data-timeframe");
+          this.currentTimeframe = btn.getAttribute("data-timeframe") || "all";
           this.render();
         });
       });
     }
 
-    this.dom.categoryFilters.querySelectorAll(".filter-pill").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        this.dom.categoryFilters.querySelectorAll(".filter-pill").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        this.currentCategory = btn.getAttribute("data-category");
-        this.render();
+    // Category filters
+    if (this.dom.categoryFilters) {
+      this.dom.categoryFilters.querySelectorAll(".filter-pill").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          this.dom.categoryFilters.querySelectorAll(".filter-pill").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          this.currentCategory = btn.getAttribute("data-category") || "all";
+          this.render();
+        });
       });
-    });
+    }
 
-    this.dom.tweetSelectedBtn.addEventListener("click", () => this.openTweetModalForSelected());
-    this.dom.clearSelectionBtn.addEventListener("click", () => this.clearSelection());
+    // Selection Bar
+    if (this.dom.tweetSelectedBtn) {
+      this.dom.tweetSelectedBtn.addEventListener("click", () => this.openTweetModalForSelected());
+    }
+    if (this.dom.clearSelectionBtn) {
+      this.dom.clearSelectionBtn.addEventListener("click", () => this.clearSelection());
+    }
 
-    this.dom.closeModalBtn.addEventListener("click", () => this.closeTweetModal());
-    this.dom.tweetModal.addEventListener("click", (e) => {
-      if (e.target === this.dom.tweetModal) this.closeTweetModal();
-    });
+    // Modal
+    if (this.dom.closeModalBtn) {
+      this.dom.closeModalBtn.addEventListener("click", () => this.closeTweetModal());
+    }
+    if (this.dom.tweetModal) {
+      this.dom.tweetModal.addEventListener("click", (e) => {
+        if (e.target === this.dom.tweetModal) this.closeTweetModal();
+      });
+    }
+    if (this.dom.tweetTextarea) {
+      this.dom.tweetTextarea.addEventListener("input", () => this.updateTweetModalState());
+    }
 
-    this.dom.tweetTextarea.addEventListener("input", () => this.updateTweetModalState());
-
+    // Platform Tab Buttons
     document.querySelectorAll(".platform-tab").forEach((tab) => {
       tab.addEventListener("click", () => {
         document.querySelectorAll(".platform-tab").forEach((t) => t.classList.remove("active"));
         tab.classList.add("active");
-        this.currentPlatform = tab.getAttribute("data-platform");
+        this.currentPlatform = tab.getAttribute("data-platform") || "twitter";
         this.updatePlatformView();
       });
     });
 
+    // AI Style Preset Buttons
     document.querySelectorAll(".btn-ai-style").forEach((btn) => {
       btn.addEventListener("click", () => {
         document.querySelectorAll(".btn-ai-style").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
-        this.aiSelectedStyle = btn.getAttribute("data-style");
+        this.aiSelectedStyle = btn.getAttribute("data-style") || "viral";
 
-        if (this.aiSelectedStyle === "custom") {
-          this.dom.aiCustomPromptWrap.style.display = "block";
-          this.dom.aiCustomPromptInput.focus();
-        } else {
-          this.dom.aiCustomPromptWrap.style.display = "none";
+        if (this.dom.aiCustomPromptWrap && this.dom.aiCustomPromptInput) {
+          if (this.aiSelectedStyle === "custom") {
+            this.dom.aiCustomPromptWrap.style.display = "block";
+            this.dom.aiCustomPromptInput.focus();
+          } else {
+            this.dom.aiCustomPromptWrap.style.display = "none";
+          }
         }
       });
     });
 
+    // AI Actions
     if (this.dom.aiGenerateBtn) {
       this.dom.aiGenerateBtn.addEventListener("click", () => this.generateWithLocalAi());
     }
@@ -283,14 +319,21 @@ class ReleaseNotesApp {
       this.dom.aiRevertBtn.addEventListener("click", () => this.revertAiEdit());
     }
 
+    // Hashtag Chips
     document.querySelectorAll(".tag-chip").forEach((chip) => {
       chip.addEventListener("click", () => {
         const tag = chip.getAttribute("data-tag");
-        this.insertHashtag(tag);
+        if (tag) this.insertHashtag(tag);
       });
     });
 
-    this.dom.postTweetBtn.addEventListener("click", () => this.postTweetToTwitter());
+    // Social Sharing in Modal
+    if (this.dom.copyTweetBtn) {
+      this.dom.copyTweetBtn.addEventListener("click", () => this.copyTweetText());
+    }
+    if (this.dom.postTweetBtn) {
+      this.dom.postTweetBtn.addEventListener("click", () => this.postTweetToTwitter());
+    }
     if (this.dom.postFbBtn) {
       this.dom.postFbBtn.addEventListener("click", () => this.postModalToFacebook());
     }
@@ -300,8 +343,8 @@ class ReleaseNotesApp {
     if (this.dom.postBlueskyBtn) {
       this.dom.postBlueskyBtn.addEventListener("click", () => this.postModalToBlueSky());
     }
-    this.dom.copyTweetBtn.addEventListener("click", () => this.copyTweetText());
 
+    // Back to Top Button
     if (this.dom.backToTopBtn) {
       window.addEventListener("scroll", () => {
         if (window.scrollY > 300) {
@@ -315,8 +358,9 @@ class ReleaseNotesApp {
       });
     }
 
+    // Keyboard Shortcuts
     document.addEventListener("keydown", (e) => {
-      if (this.dom.tweetModal.style.display !== "none") {
+      if (this.dom.tweetModal && this.dom.tweetModal.style.display !== "none") {
         if (e.key === "Escape") {
           this.closeTweetModal();
         } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
@@ -344,9 +388,11 @@ class ReleaseNotesApp {
       }
 
       if (e.key === "/") {
-        e.preventDefault();
-        this.dom.searchInput.focus();
-        this.dom.searchInput.select();
+        if (this.dom.searchInput) {
+          e.preventDefault();
+          this.dom.searchInput.focus();
+          this.dom.searchInput.select();
+        }
       } else if (e.key === "r" || e.key === "R") {
         this.refreshFeed(true);
       } else if (e.key === "?") {
@@ -420,7 +466,7 @@ class ReleaseNotesApp {
   }
 
   /* ========================================================================
-     Shortcuts & Help Modals
+     Modals
      ======================================================================== */
   openShortcutsModal() {
     if (this.dom.shortcutsModal) this.dom.shortcutsModal.style.display = "flex";
@@ -445,13 +491,13 @@ class ReleaseNotesApp {
     if (this.isLoading) return;
     this.isLoading = true;
 
-    this.dom.loadingState.style.display = "block";
-    this.dom.errorState.style.display = "none";
-    this.dom.emptyState.style.display = "none";
-    this.dom.entriesList.innerHTML = "";
-    this.dom.refreshBtn.classList.add("loading");
+    if (this.dom.loadingState) this.dom.loadingState.style.display = "block";
+    if (this.dom.errorState) this.dom.errorState.style.display = "none";
+    if (this.dom.emptyState) this.dom.emptyState.style.display = "none";
+    if (this.dom.entriesList) this.dom.entriesList.innerHTML = "";
+    if (this.dom.refreshBtn) this.dom.refreshBtn.classList.add("loading");
 
-    const endpoint = forceRefresh ? "/api/feed?refresh=1" : "/api/feed";
+    const endpoint = forceRefresh ? "/api/release-notes?refresh=1" : "/api/release-notes";
 
     try {
       const response = await fetch(endpoint);
@@ -459,29 +505,32 @@ class ReleaseNotesApp {
         throw new Error(`Feed request failed with HTTP ${response.status}`);
       }
 
-      const data = await response.json();
-      if (data.status === "error") {
-        throw new Error(data.message || "Failed to parse release notes feed");
+      const json = await response.json();
+      if (json.status === "error") {
+        throw new Error(json.message || "Failed to parse release notes feed");
       }
 
-      this.entries = data.entries || [];
-      this.totalUpdates = data.total_updates || 0;
+      // Handle both formats: json.entries or json.data.entries
+      const payload = json.data || json;
+      this.entries = payload.entries || json.entries || [];
+      this.totalUpdates = payload.total_updates || json.total_updates || 0;
 
       // Update counters
-      this.dom.totalReleasesCount.textContent = this.entries.length;
-      this.dom.totalUpdatesCount.textContent = this.totalUpdates;
+      if (this.dom.totalReleasesCount) this.dom.totalReleasesCount.textContent = this.entries.length;
+      if (this.dom.totalUpdatesCount) this.dom.totalUpdatesCount.textContent = this.totalUpdates;
       this.updateCategoryCounts();
 
       // Format updated timestamp
-      if (data.fetched_at) {
-        const dateObj = new Date(data.fetched_at);
+      const fetchedAt = payload.fetched_at || json.fetched_at;
+      if (fetchedAt && this.dom.lastUpdatedText) {
+        const dateObj = new Date(fetchedAt);
         this.dom.lastUpdatedText.textContent = `Updated ${dateObj.toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         })}`;
       }
 
-      this.dom.loadingState.style.display = "none";
+      if (this.dom.loadingState) this.dom.loadingState.style.display = "none";
       this.render();
 
       if (forceRefresh) {
@@ -489,13 +538,18 @@ class ReleaseNotesApp {
       }
     } catch (err) {
       console.error("Error fetching release notes:", err);
-      this.dom.loadingState.style.display = "none";
-      this.dom.errorState.style.display = "block";
-      this.dom.errorMessage.textContent = err.message || "Network error. Please try again.";
+      if (this.dom.loadingState) this.dom.loadingState.style.display = "none";
+      if (this.dom.errorState) {
+        this.dom.errorState.style.display = "block";
+        if (this.dom.errorMessage) {
+          this.dom.errorMessage.textContent = err.message || "Network error. Please try again.";
+        }
+      }
       this.showToast("Failed to load release notes feed", "error");
     } finally {
       this.isLoading = false;
-      this.dom.refreshBtn.classList.remove("loading");
+      if (this.dom.loadingState) this.dom.loadingState.style.display = "none";
+      if (this.dom.refreshBtn) this.dom.refreshBtn.classList.remove("loading");
     }
   }
 
@@ -515,7 +569,7 @@ class ReleaseNotesApp {
     };
 
     for (const entry of this.entries) {
-      for (const item of entry.items) {
+      for (const item of entry.items || []) {
         counts.all++;
         const cat = (item.category || "feature").toLowerCase();
         if (counts[cat] !== undefined) {
@@ -563,14 +617,12 @@ class ReleaseNotesApp {
 
   toggleCollapseAll() {
     if (this.collapsedDateGroups.size === 0) {
-      // Collapse all
       for (const entry of this.entries) {
         this.collapsedDateGroups.add(entry.id);
       }
       if (this.dom.collapseIcon) this.dom.collapseIcon.textContent = "📁";
       this.showToast("Collapsed all date sections", "info");
     } else {
-      // Expand all
       this.collapsedDateGroups.clear();
       if (this.dom.collapseIcon) this.dom.collapseIcon.textContent = "📂";
       this.showToast("Expanded all date sections", "info");
@@ -579,7 +631,7 @@ class ReleaseNotesApp {
   }
 
   /* ========================================================================
-     Filtering & Keyword Highlighting
+     Filtering & Search
      ======================================================================== */
   getFilteredEntries() {
     const query = this.searchQuery;
@@ -596,7 +648,6 @@ class ReleaseNotesApp {
     const result = [];
 
     for (const entry of this.entries) {
-      // Timeframe check (date parsing)
       if (daysLimit) {
         const entryTime = new Date(entry.date).getTime();
         if (!isNaN(entryTime) && now - entryTime > daysLimit) {
@@ -605,13 +656,11 @@ class ReleaseNotesApp {
       }
 
       const matchingItems = [];
-      for (const item of entry.items) {
-        // Starred check
+      for (const item of entry.items || []) {
         if (timeframe === "starred" && !this.starredItemIds.has(item.id)) {
           continue;
         }
 
-        // Category filter
         if (category !== "all") {
           const itemCat = (item.category || "").toLowerCase();
           if (itemCat !== category.toLowerCase()) {
@@ -619,10 +668,9 @@ class ReleaseNotesApp {
           }
         }
 
-        // Search Query filter
         if (query) {
-          const textMatch = item.text.toLowerCase().includes(query);
-          const dateMatch = entry.date.toLowerCase().includes(query);
+          const textMatch = (item.text || "").toLowerCase().includes(query);
+          const dateMatch = (entry.date || "").toLowerCase().includes(query);
           const catMatch = (item.category || "").toLowerCase().includes(query);
           if (!textMatch && !dateMatch && !catMatch) {
             continue;
@@ -654,12 +702,14 @@ class ReleaseNotesApp {
     this.searchQuery = "";
     this.currentCategory = "all";
     this.currentTimeframe = "all";
-    this.dom.searchInput.value = "";
-    this.dom.clearSearchBtn.style.display = "none";
+    if (this.dom.searchInput) this.dom.searchInput.value = "";
+    if (this.dom.clearSearchBtn) this.dom.clearSearchBtn.style.display = "none";
 
-    this.dom.categoryFilters.querySelectorAll(".filter-pill").forEach((b) => {
-      b.classList.toggle("active", b.getAttribute("data-category") === "all");
-    });
+    if (this.dom.categoryFilters) {
+      this.dom.categoryFilters.querySelectorAll(".filter-pill").forEach((b) => {
+        b.classList.toggle("active", b.getAttribute("data-category") === "all");
+      });
+    }
     if (this.dom.timeframeFilters) {
       this.dom.timeframeFilters.querySelectorAll(".timeframe-pill").forEach((b) => {
         b.classList.toggle("active", b.getAttribute("data-timeframe") === "all");
@@ -673,6 +723,8 @@ class ReleaseNotesApp {
      Rendering
      ======================================================================== */
   render() {
+    if (!this.dom.entriesList) return;
+
     const filtered = this.getFilteredEntries();
 
     let totalFilteredItems = 0;
@@ -681,7 +733,7 @@ class ReleaseNotesApp {
     }
 
     // Update Search Summary Bar
-    if (this.dom.searchSummaryBar) {
+    if (this.dom.searchSummaryBar && this.dom.searchSummaryText) {
       if (this.searchQuery || this.currentCategory !== "all" || this.currentTimeframe !== "all") {
         this.dom.searchSummaryBar.style.display = "flex";
         let desc = `Showing ${totalFilteredItems} updates`;
@@ -696,11 +748,11 @@ class ReleaseNotesApp {
 
     if (!filtered.length) {
       this.dom.entriesList.innerHTML = "";
-      this.dom.emptyState.style.display = "block";
+      if (this.dom.emptyState) this.dom.emptyState.style.display = "block";
       return;
     }
 
-    this.dom.emptyState.style.display = "none";
+    if (this.dom.emptyState) this.dom.emptyState.style.display = "none";
 
     let html = "";
     for (const entry of filtered) {
@@ -752,13 +804,11 @@ class ReleaseNotesApp {
       announcement: "📢",
     }[categoryClass] || "⚡";
 
-    // Highlight search query in item body
-    let itemHtml = item.html;
+    let itemHtml = item.html || this.escapeHtml(item.text);
     if (this.searchQuery) {
       itemHtml = this.highlightMatches(itemHtml, this.searchQuery);
     }
 
-    // Check if new since last visit (e.g. entry within last 48h)
     const entryDateParsed = new Date(entry.date).getTime();
     const isRecent = !isNaN(entryDateParsed) && (Date.now() - entryDateParsed < 48 * 60 * 60 * 1000);
 
@@ -774,7 +824,7 @@ class ReleaseNotesApp {
           </div>
 
           <div class="update-actions">
-            <!-- Star / Bookmark -->
+            <!-- Star -->
             <button class="btn-star-sm action-star-btn ${isStarred ? "starred" : ""}" data-item-id="${item.id}" title="${isStarred ? "Remove star" : "Bookmark update"}">
               ${isStarred ? "⭐" : "☆"}
             </button>
@@ -822,27 +872,29 @@ class ReleaseNotesApp {
   }
 
   attachCardEventListeners() {
-    // Accordion date header click
+    if (!this.dom.entriesList) return;
+
+    // Accordion date headers
     this.dom.entriesList.querySelectorAll(".date-group-header").forEach((header) => {
       header.addEventListener("click", () => {
         const dateId = header.getAttribute("data-date-id");
-        this.toggleDateGroup(dateId);
+        if (dateId) this.toggleDateGroup(dateId);
       });
     });
 
-    // Checkbox toggles
+    // Checkboxes
     this.dom.entriesList.querySelectorAll(".card-select-checkbox").forEach((cb) => {
       cb.addEventListener("change", (e) => {
         const itemId = e.target.getAttribute("data-item-id");
-        this.toggleSelectItem(itemId, e.target.checked);
+        if (itemId) this.toggleSelectItem(itemId, e.target.checked);
       });
     });
 
-    // Star buttons
+    // Stars
     this.dom.entriesList.querySelectorAll(".action-star-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const itemId = btn.getAttribute("data-item-id");
-        this.toggleStar(itemId);
+        if (itemId) this.toggleStar(itemId);
       });
     });
 
@@ -874,7 +926,7 @@ class ReleaseNotesApp {
       });
     });
 
-    // Facebook single buttons
+    // Facebook buttons
     this.dom.entriesList.querySelectorAll(".action-fb-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const itemId = btn.getAttribute("data-item-id");
@@ -885,7 +937,7 @@ class ReleaseNotesApp {
       });
     });
 
-    // LinkedIn single buttons
+    // LinkedIn buttons
     this.dom.entriesList.querySelectorAll(".action-linkedin-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const itemId = btn.getAttribute("data-item-id");
@@ -896,7 +948,7 @@ class ReleaseNotesApp {
       });
     });
 
-    // Tweet single buttons
+    // Tweet buttons
     this.dom.entriesList.querySelectorAll(".action-tweet-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const itemId = btn.getAttribute("data-item-id");
@@ -931,20 +983,24 @@ class ReleaseNotesApp {
 
   clearSelection() {
     this.selectedItemIds.clear();
-    this.dom.entriesList.querySelectorAll(".update-card.selected").forEach((c) => c.classList.remove("selected"));
-    this.dom.entriesList.querySelectorAll(".card-select-checkbox:checked").forEach((cb) => (cb.checked = false));
+    if (this.dom.entriesList) {
+      this.dom.entriesList.querySelectorAll(".update-card.selected").forEach((c) => c.classList.remove("selected"));
+      this.dom.entriesList.querySelectorAll(".card-select-checkbox:checked").forEach((cb) => (cb.checked = false));
+    }
     this.updateSelectionBar();
     this.showToast("Selection cleared", "info");
   }
 
   updateSelectionBar() {
     const count = this.selectedItemIds.size;
-    this.dom.selectedCount.textContent = count;
+    if (this.dom.selectedCount) this.dom.selectedCount.textContent = count;
 
-    if (count > 0) {
-      this.dom.selectionBar.style.display = "block";
-    } else {
-      this.dom.selectionBar.style.display = "none";
+    if (this.dom.selectionBar) {
+      if (count > 0) {
+        this.dom.selectionBar.style.display = "block";
+      } else {
+        this.dom.selectionBar.style.display = "none";
+      }
     }
   }
 
@@ -979,13 +1035,13 @@ class ReleaseNotesApp {
      ======================================================================== */
   openTweetModal(initialText) {
     this.aiOriginalText = initialText || "";
-    this.dom.tweetTextarea.value = initialText || "";
-    this.dom.tweetModal.style.display = "flex";
+    if (this.dom.tweetTextarea) this.dom.tweetTextarea.value = initialText || "";
+    if (this.dom.tweetModal) this.dom.tweetModal.style.display = "flex";
     if (this.dom.aiRevertBtn) this.dom.aiRevertBtn.style.display = "none";
     this.updatePlatformView();
     this.updateTweetModalState();
     this.checkAiStatus();
-    this.dom.tweetTextarea.focus();
+    if (this.dom.tweetTextarea) this.dom.tweetTextarea.focus();
   }
 
   updatePlatformView() {
@@ -998,36 +1054,40 @@ class ReleaseNotesApp {
     const maxLimit = limits[this.currentPlatform] || 280;
     if (this.dom.charMaxLimit) this.dom.charMaxLimit.textContent = maxLimit;
 
-    // Adjust preview avatar & user info
-    if (this.currentPlatform === "twitter") {
-      this.dom.previewAvatar.textContent = "🐦";
-      this.dom.previewName.textContent = "BigQuery News Tracker";
-      this.dom.previewHandle.textContent = "@BigQueryNotes";
-    } else if (this.currentPlatform === "facebook") {
-      this.dom.previewAvatar.textContent = "📘";
-      this.dom.previewName.textContent = "BigQuery Developer Community";
-      this.dom.previewHandle.textContent = "Facebook Page";
-    } else if (this.currentPlatform === "linkedin") {
-      this.dom.previewAvatar.textContent = "💼";
-      this.dom.previewName.textContent = "Google Cloud BigQuery Advocates";
-      this.dom.previewHandle.textContent = "LinkedIn Post";
-    } else if (this.currentPlatform === "bluesky") {
-      this.dom.previewAvatar.textContent = "🦋";
-      this.dom.previewName.textContent = "BigQuery Updates";
-      this.dom.previewHandle.textContent = "@bigquery.bsky.social";
+    if (this.dom.previewAvatar && this.dom.previewName && this.dom.previewHandle) {
+      if (this.currentPlatform === "twitter") {
+        this.dom.previewAvatar.textContent = "🐦";
+        this.dom.previewName.textContent = "BigQuery News Tracker";
+        this.dom.previewHandle.textContent = "@BigQueryNotes";
+      } else if (this.currentPlatform === "facebook") {
+        this.dom.previewAvatar.textContent = "📘";
+        this.dom.previewName.textContent = "BigQuery Developer Community";
+        this.dom.previewHandle.textContent = "Facebook Page";
+      } else if (this.currentPlatform === "linkedin") {
+        this.dom.previewAvatar.textContent = "💼";
+        this.dom.previewName.textContent = "Google Cloud BigQuery Advocates";
+        this.dom.previewHandle.textContent = "LinkedIn Post";
+      } else if (this.currentPlatform === "bluesky") {
+        this.dom.previewAvatar.textContent = "🦋";
+        this.dom.previewName.textContent = "BigQuery Updates";
+        this.dom.previewHandle.textContent = "@bigquery.bsky.social";
+      }
     }
   }
 
   closeTweetModal() {
-    this.dom.tweetModal.style.display = "none";
+    if (this.dom.tweetModal) this.dom.tweetModal.style.display = "none";
   }
 
   updateTweetModalState() {
+    if (!this.dom.tweetTextarea) return;
     const text = this.dom.tweetTextarea.value;
-    this.dom.tweetPreviewText.textContent = text || "Type your message above to preview...";
+    if (this.dom.tweetPreviewText) {
+      this.dom.tweetPreviewText.textContent = text || "Type your message above to preview...";
+    }
 
     const length = text.length;
-    this.dom.charCount.textContent = length;
+    if (this.dom.charCount) this.dom.charCount.textContent = length;
 
     const limits = {
       twitter: 280,
@@ -1037,15 +1097,18 @@ class ReleaseNotesApp {
     };
     const maxLimit = limits[this.currentPlatform] || 280;
 
-    this.dom.charCounterContainer.classList.remove("warning", "danger");
-    if (length > maxLimit) {
-      this.dom.charCounterContainer.classList.add("danger");
-    } else if (length > maxLimit * 0.9) {
-      this.dom.charCounterContainer.classList.add("warning");
+    if (this.dom.charCounterContainer) {
+      this.dom.charCounterContainer.classList.remove("warning", "danger");
+      if (length > maxLimit) {
+        this.dom.charCounterContainer.classList.add("danger");
+      } else if (length > maxLimit * 0.9) {
+        this.dom.charCounterContainer.classList.add("warning");
+      }
     }
   }
 
   insertHashtag(tag) {
+    if (!this.dom.tweetTextarea) return;
     let current = this.dom.tweetTextarea.value;
     if (current.includes(tag)) {
       current = current.replace(new RegExp(`\\s*${tag}`, "g"), "");
@@ -1069,6 +1132,7 @@ class ReleaseNotesApp {
   }
 
   postTweetToTwitter() {
+    if (!this.dom.tweetTextarea) return;
     const text = this.dom.tweetTextarea.value.trim();
     if (!text) {
       this.showToast("Content cannot be empty", "error");
@@ -1089,6 +1153,7 @@ class ReleaseNotesApp {
   }
 
   postModalToFacebook() {
+    if (!this.dom.tweetTextarea) return;
     const text = this.dom.tweetTextarea.value.trim();
     if (!text) {
       this.showToast("Content cannot be empty", "error");
@@ -1107,6 +1172,7 @@ class ReleaseNotesApp {
   }
 
   postModalToLinkedIn() {
+    if (!this.dom.tweetTextarea) return;
     const text = this.dom.tweetTextarea.value.trim();
     if (!text) {
       this.showToast("Content cannot be empty", "error");
@@ -1120,6 +1186,7 @@ class ReleaseNotesApp {
   }
 
   postModalToBlueSky() {
+    if (!this.dom.tweetTextarea) return;
     const text = this.dom.tweetTextarea.value.trim();
     if (!text) {
       this.showToast("Content cannot be empty", "error");
@@ -1132,6 +1199,7 @@ class ReleaseNotesApp {
   }
 
   copyTweetText() {
+    if (!this.dom.tweetTextarea) return;
     const text = this.dom.tweetTextarea.value.trim();
     if (!text) return;
     this.copyToClipboard(text);
@@ -1147,30 +1215,35 @@ class ReleaseNotesApp {
       const data = await res.json();
       this.aiConnected = data.connected;
 
-      if (data.connected) {
-        this.dom.aiStatusBadge.className = "ai-status-badge online";
-        this.dom.aiStatusBadge.textContent = `🟢 Online: ${data.default_model}`;
+      if (this.dom.aiStatusBadge) {
+        if (data.connected) {
+          this.dom.aiStatusBadge.className = "ai-status-badge online";
+          this.dom.aiStatusBadge.textContent = `🟢 Online: ${data.default_model}`;
 
-        if (data.models && data.models.length > 0) {
-          this.dom.aiModelSelect.innerHTML = data.models
-            .map((m) => `<option value="${m}" ${m === data.default_model ? "selected" : ""}>${m}</option>`)
-            .join("");
-          this.dom.aiModelWrap.style.display = "block";
+          if (this.dom.aiModelSelect && data.models && data.models.length > 0) {
+            this.dom.aiModelSelect.innerHTML = data.models
+              .map((m) => `<option value="${m}" ${m === data.default_model ? "selected" : ""}>${m}</option>`)
+              .join("");
+            if (this.dom.aiModelWrap) this.dom.aiModelWrap.style.display = "block";
+          }
+        } else {
+          this.dom.aiStatusBadge.className = "ai-status-badge offline";
+          this.dom.aiStatusBadge.textContent = "⚠️ Ollama Offline (Help)";
+          if (this.dom.aiModelWrap) this.dom.aiModelWrap.style.display = "none";
         }
-      } else {
-        this.dom.aiStatusBadge.className = "ai-status-badge offline";
-        this.dom.aiStatusBadge.textContent = "⚠️ Ollama Offline (Help)";
-        this.dom.aiModelWrap.style.display = "none";
       }
     } catch (e) {
       this.aiConnected = false;
-      this.dom.aiStatusBadge.className = "ai-status-badge offline";
-      this.dom.aiStatusBadge.textContent = "⚠️ Ollama Offline (Help)";
-      this.dom.aiModelWrap.style.display = "none";
+      if (this.dom.aiStatusBadge) {
+        this.dom.aiStatusBadge.className = "ai-status-badge offline";
+        this.dom.aiStatusBadge.textContent = "⚠️ Ollama Offline (Help)";
+      }
+      if (this.dom.aiModelWrap) this.dom.aiModelWrap.style.display = "none";
     }
   }
 
   async generateWithLocalAi() {
+    if (!this.dom.tweetTextarea) return;
     const currentText = this.dom.tweetTextarea.value.trim();
     if (!currentText) {
       this.showToast("Please enter some text or select an update first.", "error");
@@ -1185,87 +1258,95 @@ class ReleaseNotesApp {
       ? this.dom.aiCustomPromptInput.value.trim()
       : "";
 
-    this.dom.aiGenerateBtn.classList.add("loading");
-    this.dom.aiGenerateBtn.disabled = true;
-    const originalBtnText = this.dom.aiGenerateBtn.querySelector(".ai-btn-text").textContent;
-    this.dom.aiGenerateBtn.querySelector(".ai-btn-text").textContent = "Streaming from Ollama...";
-
-    // Clear textarea for live streaming output
-    this.dom.tweetTextarea.value = "";
-    this.updateTweetModalState();
-
-    try {
-      const response = await fetch("/api/ai/generate?stream=1", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: currentText,
-          style: this.aiSelectedStyle,
-          custom_prompt: customPrompt,
-          model: selectedModel,
-          stream: true,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`AI request failed with status ${response.status}`);
+    if (this.dom.aiGenerateBtn) {
+      this.dom.aiGenerateBtn.classList.add("loading");
+      this.dom.aiGenerateBtn.disabled = true;
+      const originalBtnText = this.dom.aiGenerateBtn.querySelector(".ai-btn-text")
+        ? this.dom.aiGenerateBtn.querySelector(".ai-btn-text").textContent
+        : "Rewrite with Local AI";
+      if (this.dom.aiGenerateBtn.querySelector(".ai-btn-text")) {
+        this.dom.aiGenerateBtn.querySelector(".ai-btn-text").textContent = "Streaming from Ollama...";
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let streamedAccumulator = "";
+      this.dom.tweetTextarea.value = "";
+      this.updateTweetModalState();
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      try {
+        const response = await fetch("/api/ai/generate?stream=1", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: currentText,
+            style: this.aiSelectedStyle,
+            custom_prompt: customPrompt,
+            model: selectedModel,
+            stream: true,
+          }),
+        });
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
+        if (!response.ok) {
+          throw new Error(`AI request failed with status ${response.status}`);
+        }
 
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.token) {
-                streamedAccumulator += data.token;
-                this.dom.tweetTextarea.value = streamedAccumulator;
-                this.updateTweetModalState();
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let streamedAccumulator = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split("\n");
+
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (data.token) {
+                  streamedAccumulator += data.token;
+                  this.dom.tweetTextarea.value = streamedAccumulator;
+                  this.updateTweetModalState();
+                }
+                if (data.error) {
+                  throw new Error(data.error);
+                }
+              } catch (jsonErr) {
+                // Ignore parse warning for partial line
               }
-              if (data.error) {
-                throw new Error(data.error);
-              }
-            } catch (jsonErr) {
-              // Non-fatal parse warning for partial line
             }
           }
         }
-      }
 
-      if (streamedAccumulator.trim()) {
-        this.dom.tweetTextarea.value = streamedAccumulator.trim();
-        this.updateTweetModalState();
-        if (this.dom.aiRevertBtn) this.dom.aiRevertBtn.style.display = "inline-flex";
-        this.showToast(`Polished with local ${selectedModel}! ✨`, "success");
-      } else {
-        // Fallback restore
+        if (streamedAccumulator.trim()) {
+          this.dom.tweetTextarea.value = streamedAccumulator.trim();
+          this.updateTweetModalState();
+          if (this.dom.aiRevertBtn) this.dom.aiRevertBtn.style.display = "inline-flex";
+          this.showToast(`Polished with local ${selectedModel}! ✨`, "success");
+        } else {
+          this.dom.tweetTextarea.value = currentText;
+          this.updateTweetModalState();
+          throw new Error("Model returned empty response. Please retry.");
+        }
+      } catch (err) {
+        console.error("AI Streaming Generation Error:", err);
         this.dom.tweetTextarea.value = currentText;
         this.updateTweetModalState();
-        throw new Error("Model returned empty stream. Please retry.");
+        this.showToast(err.message || "Failed to generate AI rewrite", "error");
+      } finally {
+        if (this.dom.aiGenerateBtn) {
+          this.dom.aiGenerateBtn.classList.remove("loading");
+          this.dom.aiGenerateBtn.disabled = false;
+          if (this.dom.aiGenerateBtn.querySelector(".ai-btn-text")) {
+            this.dom.aiGenerateBtn.querySelector(".ai-btn-text").textContent = originalBtnText;
+          }
+        }
       }
-    } catch (err) {
-      console.error("AI Streaming Generation Error:", err);
-      this.dom.tweetTextarea.value = currentText;
-      this.updateTweetModalState();
-      this.showToast(err.message || "Failed to generate AI rewrite", "error");
-    } finally {
-      this.dom.aiGenerateBtn.classList.remove("loading");
-      this.dom.aiGenerateBtn.disabled = false;
-      this.dom.aiGenerateBtn.querySelector(".ai-btn-text").textContent = originalBtnText;
     }
   }
 
   revertAiEdit() {
-    if (this.aiOriginalText) {
+    if (this.aiOriginalText && this.dom.tweetTextarea) {
       this.dom.tweetTextarea.value = this.aiOriginalText;
       this.updateTweetModalState();
       if (this.dom.aiRevertBtn) this.dom.aiRevertBtn.style.display = "none";
@@ -1287,7 +1368,7 @@ class ReleaseNotesApp {
     } else {
       const filtered = this.getFilteredEntries();
       for (const entry of filtered) {
-        for (const item of entry.items) {
+        for (const item of entry.items || []) {
           itemsToExport.push({ entry, item });
         }
       }
@@ -1343,7 +1424,6 @@ class ReleaseNotesApp {
       }
     }
 
-    // Fallback for older browsers or non-HTTPS contexts
     const textArea = document.createElement("textarea");
     textArea.value = text;
     textArea.style.position = "fixed";
@@ -1365,7 +1445,7 @@ class ReleaseNotesApp {
      ======================================================================== */
   findItemById(itemId) {
     for (const entry of this.entries) {
-      for (const item of entry.items) {
+      for (const item of entry.items || []) {
         if (item.id === itemId) {
           return { entry, item };
         }
@@ -1382,6 +1462,7 @@ class ReleaseNotesApp {
   }
 
   showToast(message, type = "info") {
+    if (!this.dom.toastContainer) return;
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
 
